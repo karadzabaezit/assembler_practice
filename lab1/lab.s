@@ -4,49 +4,54 @@ section	.data
 res:
 	dd	0
 a:
-	dd	100
+	dd	1000000
 b:
-	dd	-10
+	dd	1000000
 c:
-	dd	4
+	dd	1000000
 d:
-	dw	10
+	dw	5
 e:
 	dw	5
 section	.text
 global	_start
 _start:
-	mov	edi, [b]
-	mov	eax, [c]
-	imul	eax, edi
-	mov	esi, eax
+	movsx	rdi, dword [b]
+	movsx	rax, dword [c]
+	imul	rax, rdi
+	jo	err
+	mov	rsi, rax
 
-	mov	eax, [a]
-	movsx	edi, word[d]
-	movsx	ecx, word[e]
-	add	edi, ecx
+	movsx	rax, dword [a]
+	movsx	rdi, word [d]
+	movsx	rcx, word [e]
+	add	rdi, rcx
+	jo	err
 	jz	err
-	cdq
-	idiv	edi
-	add	esi, eax
+	cqo
+	idiv	rdi
+	add	rsi, rax
+	jo	err
 
-	movsx	eax, word[d]
-	imul	eax, eax
-	mov	edi, [b]
-	imul	edi, ecx
-	test	edi, edi
+	movsx	rax, word [d]
+	imul	rax, rax
+	movsx	rdi, dword [b]
+	imul	rdi, rcx
+	jo	err
+	test	rdi, rdi
 	jz	err
-	cdq
-	idiv	edi
+	cqo
+	idiv	rdi
 
-	sub	esi, eax
+	sub	rsi, rax
+	jo	err
 
-	mov	[res], esi
+	mov	[res], rsi
 
-	mov     eax, 60
-	mov     edi, 0
+	mov     rax, 60
+	mov     rdi, 0
 	syscall
 err:
-	mov	eax, 60
-	mov	edi, 1
+	mov	rax, 60
+	mov	rdi, 1
 	syscall

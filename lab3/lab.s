@@ -28,23 +28,6 @@ section .bss
 section .text
     global _start
 
-; -----------------------------------------------------------------------
-; Register map (preserved across all subroutine calls):
-;   r14  = file descriptor
-;   r15  = N (shift amount)
-;   rbx  = current word length accumulated in word_buf
-;   r12  = words printed on current line (0 = no words yet)
-;   r13  = newlines emitted so far (used to track if any output happened)
-;
-; Loop-local (reloaded each iteration, never relied on across calls):
-;   rax  = bytes read / syscall nr  (scratch)
-;   rbp  = bytes in current read_buf chunk
-;   r9   = index into read_buf
-;
-; NOTE: rcx is NOT used to hold the buffer count because rep movsb in
-;       rotate_write clobbers rcx.  Use rbp (callee-saved) instead.
-; -----------------------------------------------------------------------
-
 _start:
     pop     rax
     cmp     rax, 3
@@ -131,10 +114,6 @@ close_exit:
     xor     edi, edi
     syscall
 
-; -----------------------------------------------------------------------
-; emit_word: if pending word (rbx>0), print separator if needed, then word
-; Modifies: rax, rdi, rsi, rdx (syscall clobber), r12, rbx
-; -----------------------------------------------------------------------
 emit_word:
     cmp     rbx, 0
     je      ew_done
@@ -153,9 +132,6 @@ ew_no_space:
 ew_done:
     ret
 
-; -----------------------------------------------------------------------
-; emit_newline: output \n, reset words_on_line, increment lines counter
-; -----------------------------------------------------------------------
 emit_newline:
     mov     rax, SYS_WRITE
     mov     rdi, STDOUT
@@ -166,12 +142,6 @@ emit_newline:
     inc     r13
     ret
 
-; -----------------------------------------------------------------------
-; rotate_write: right-rotate word_buf[0..rdi-1] by (r15 % rdi), write stdout
-; rdi = word length
-; Preserves: rbx, r12, r13, r14, r15, r9, rcx
-; Clobbers:  rax, rdx, r10, r11, rsi, rdi (caller must not rely on them)
-; -----------------------------------------------------------------------
 rotate_write:
     push    r10
     push    r11
@@ -221,10 +191,6 @@ rw_done:
     pop     r10
     ret
 
-; -----------------------------------------------------------------------
-; parse_uint: rdi = null-terminated string
-; Returns:   rax = parsed value, or -1 on error (empty / non-digit chars)
-; -----------------------------------------------------------------------
 parse_uint:
     xor     rax, rax
     xor     rcx, rcx
@@ -249,9 +215,6 @@ pu_err:
     mov     rax, -1
     ret
 
-; -----------------------------------------------------------------------
-; Error handlers
-; -----------------------------------------------------------------------
 die_usage:
     mov     rax, SYS_WRITE
     mov     rdi, STDERR
